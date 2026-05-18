@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "predev": "node -e \"require('fs').rmSync('node_modules/.vite',{recursive:true,force:true})\"",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
@@ -22,13 +23,13 @@
     "@types/node": "^20.19.41",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.0",
-    "@vitejs/plugin-react": "^4.7.0",
+    "@vitejs/plugin-react": "^5.2.0",
     "autoprefixer": "^10.4.20",
     "jsdom": "^25.0.1",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.13",
     "typescript": "^5.6.2",
-    "vite": "^6.4.2",
+    "vite": "^7.3.3",
     "vitest": "^3.2.4"
   }
 }
