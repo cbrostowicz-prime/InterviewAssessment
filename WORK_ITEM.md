@@ -19,37 +19,55 @@ all created in one of four bulk-import batches when their ERP integration
 first went live. Every order inside a batch has an **identical**
 `created_at` because the importer wrote them in a tight loop.
 
-| Batch timestamp (UTC) | Orders in batch | Order IDs                                            |
-|-----------------------|-----------------|------------------------------------------------------|
-| 2025-06-04 11:15:00   | 10              | 237, 241, 245, 249, 253, 257, 261, 265, 269, 273     |
-| 2025-01-21 16:45:00   | 10              | 236, 240, 244, 248, 252, 256, 260, 264, 268, 272     |
-| 2024-09-03 09:30:00   | 10              | 235, 239, 243, 247, 251, 255, 259, 263, 267, 271     |
-| 2024-05-12 14:00:00   | 10              | 234, 238, 242, 246, 250, 254, 258, 262, 266, 270     |
+| Batch timestamp (UTC) | Orders in batch | Order IDs |
+|-----------------------|----------------:|-----------|
+| 2025-06-04 11:15:00   | 10              | 264 – 273 |
+| 2025-01-21 16:45:00   | 10              | 254 – 263 |
+| 2024-09-03 09:30:00   | 10              | 244 – 253 |
+| 2024-05-12 14:00:00   | 10              | 234 – 243 |
 
 You can pull these yourself: `GET /api/orders?userId=982&pageSize=50`,
 or pick "Felix Roy (ERP import)" from the user dropdown in the UI.
 
 ## What the customer sent us
 
-Sasha attached a screen recording. The customer was paging with
-`pageSize=5`. Three consecutive pages from their session:
+Sasha attached a screen recording. The customer was paging through their
+order history with `pageSize=5`. The first two pages from their session:
 
-| Page | Order IDs returned                                          |
-|------|-------------------------------------------------------------|
-| 1    | **#273**, **#269**, **#257**, #265, #261                    |
-| 2    | **#269** (repeat), **#257** (repeat), #253, #249, #245      |
-| 3    | #237, #272, #268, #264, #260                                |
+| Page | Order IDs returned (customer's session) |
+|------|-----------------------------------------|
+| 1    | #273, #271, **#272**, #269, **#270**    |
+| 2    | **#272** ← repeat, **#270** ← repeat, #268, #267, #266 |
 
-Two orders from page 1 (#269 and #257) appear again on page 2. Meanwhile
-**#241 never appears at all** — the customer paged through all 8 pages and
-it was never shown, even though `GET /api/orders/241` returns it just fine
-and the totals across pages add up to 40.
+Two orders from page 1 (#272 and #270) appear again on page 2. Meanwhile
+**#265 and #264 never appear at all** — the customer paged through every
+page and they were never shown, even though `GET /api/orders/265` and
+`GET /api/orders/264` return them fine and the `total` field across pages
+sums to 40.
 
-The customer's stated frustration: "I'm trying to find a $135.94 charge
-from June and I see it on one page, refresh, and now it's on a different
-page or gone."
+The customer's stated frustration: "I'm trying to reconcile a $424.93
+charge from June. I see it on one page, refresh, and it's on a different
+page or gone." (That's order **#267** — June 4, 2025, $424.93.)
 
-## Repro
+## What you'll see locally
+
+If you page through user 982 against your local database, you'll most
+likely see the canonical order:
+
+| Page | Order IDs returned (your local DB)   |
+|------|--------------------------------------|
+| 1    | #273, #272, #271, #270, #269         |
+| 2    | #268, #267, #266, #265, #264         |
+| 3    | #263, #262, #261, #260, #259         |
+| …    | …                                    |
+| 8    | #238, #237, #236, #235, #234         |
+
+No dupes, no gaps. That's because SQL Server's query plan on this small
+dataset happens to be stable. **The bug is intermittent in the API/UI** —
+plan choice depends on stats, parallelism, and concurrent load — but the
+query itself is unsafe regardless of whether dupes surface today.
+
+## Repro (this is the source of truth)
 
 The on-call rotation handed this over with the following note:
 
@@ -62,12 +80,6 @@ The on-call rotation handed this over with the following note:
 cd backend
 dotnet test --filter "FullyQualifiedName~PaginationStableOrderingTests"
 ```
-
-Heads-up: the bug is **intermittent in the API/UI** — SQL Server's choice
-of query plan depends on stats, parallelism, and load, and on a small local
-dataset you may see consistent results across pages even though the
-underlying query is fundamentally unsafe. The failing test pins this down
-deterministically; trust it over manual repros.
 
 ## Acceptance criteria
 

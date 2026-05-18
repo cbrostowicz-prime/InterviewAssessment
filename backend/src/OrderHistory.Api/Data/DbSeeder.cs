@@ -108,37 +108,39 @@ public static class DbSeeder
             new DateTime(2025, 1, 21, 16, 45, 0, DateTimeKind.Utc),
             new DateTime(2025, 6, 04, 11, 15, 0, DateTimeKind.Utc)
         ];
-        const int orderCount = 40;
+        const int ordersPerBatch = 10;
 
-        for (var k = 0; k < orderCount; k++)
+        foreach (var createdAt in importBatches)
         {
-            var createdAt = importBatches[k % importBatches.Length];
-            var orderId = nextOrderId++;
-            var lineCount = 1 + rng.Next(3);
-            var lineTotal = 0;
-            for (var li = 0; li < lineCount; li++)
+            for (var i = 0; i < ordersPerBatch; i++)
             {
-                var prod = Catalog[rng.Next(Catalog.Length)];
-                var qty = 1 + rng.Next(3);
-                lineTotal += qty * prod.PriceCents;
-                items.Add(new OrderItem
+                var orderId = nextOrderId++;
+                var lineCount = 1 + rng.Next(3);
+                var lineTotal = 0;
+                for (var li = 0; li < lineCount; li++)
                 {
-                    Id = nextItemId++,
-                    OrderId = orderId,
-                    Sku = prod.Sku,
-                    Quantity = qty,
-                    UnitPriceCents = prod.PriceCents
+                    var prod = Catalog[rng.Next(Catalog.Length)];
+                    var qty = 1 + rng.Next(3);
+                    lineTotal += qty * prod.PriceCents;
+                    items.Add(new OrderItem
+                    {
+                        Id = nextItemId++,
+                        OrderId = orderId,
+                        Sku = prod.Sku,
+                        Quantity = qty,
+                        UnitPriceCents = prod.PriceCents
+                    });
+                }
+                orders.Add(new Order
+                {
+                    Id = orderId,
+                    UserId = user.Id,
+                    Status = OrderStatus.Delivered,
+                    CreatedAt = createdAt,
+                    TotalCents = lineTotal,
+                    DeletedAt = null
                 });
             }
-            orders.Add(new Order
-            {
-                Id = orderId,
-                UserId = user.Id,
-                Status = OrderStatus.Delivered,
-                CreatedAt = createdAt,
-                TotalCents = lineTotal,
-                DeletedAt = null
-            });
         }
     }
 
