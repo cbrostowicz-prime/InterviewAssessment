@@ -26,8 +26,15 @@ backend/src/OrderHistory.Api/
   Dtos/                   request/response shapes at the API boundary
   Migrations/             EF Core migrations
 backend/tests/OrderHistory.Tests/
-  Per-feature test classes. Uses a shared SqlServerFixture that spins
-  up a unique database name per test class.
+  Infrastructure/SqlServerFixture.cs   xUnit collection fixture that
+                                       creates a per-run database on the
+                                       SQL Server container, applies
+                                       migrations, and drops it on
+                                       teardown. Inject via primary
+                                       constructor and tag the class with
+                                       [Collection("SqlServer")].
+  Infrastructure/TestData.cs           AddUserAsync / AddOrdersAsync
+                                       extensions for arranging data.
 ```
 
 ### Conventions
@@ -44,9 +51,9 @@ backend/tests/OrderHistory.Tests/
   The list endpoint returns `{ items, page, pageSize, total }`.
 - Money is stored as `TotalCents` (int) on the entity. DTOs expose
   `total` as decimal dollars.
-- Errors: return `Problem(...)` for unexpected; return `NotFound()` /
-  `BadRequest()` for known states. `IExceptionHandler` handles uncaught
-  ones with a structured payload.
+- Errors: return `NotFound()` / `BadRequest()` / `Conflict()` for known
+  states. Let unexpected exceptions bubble up; ASP.NET Core's developer
+  exception page handles them in Development.
 
 ### Where things live
 
@@ -56,9 +63,9 @@ backend/tests/OrderHistory.Tests/
 - New migration: `dotnet ef migrations add <Name> --project
   src/OrderHistory.Api --startup-project src/OrderHistory.Api`. The API
   applies them on startup.
-- New test: matching class under `tests/OrderHistory.Tests/`. Inherit
-  from `IntegrationTestBase` to get a fresh database and a configured
-  `IServiceProvider`.
+- New test: matching class under `tests/OrderHistory.Tests/`. Tag with
+  `[Collection("SqlServer")]` and inject `SqlServerFixture` via the
+  primary constructor. Call `fx.CreateContext()` for a fresh DbContext.
 
 ### Caching
 
