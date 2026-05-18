@@ -7,12 +7,18 @@ const projectRoot = fileURLToPath(new URL('.', import.meta.url));
 export default defineConfig({
   root: projectRoot,
   plugins: [react()],
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      'react-dom/client',
+      '@tanstack/react-query',
+      'axios',
+    ],
+  },
   server: {
     port: 5173,
     strictPort: true,
-    warmup: {
-      clientFiles: ['./src/main.tsx'],
-    },
     proxy: {
       '/api': {
         target: 'http://localhost:5080',
