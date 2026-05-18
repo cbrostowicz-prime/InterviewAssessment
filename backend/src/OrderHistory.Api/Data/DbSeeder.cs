@@ -12,7 +12,8 @@ public static class DbSeeder
         new User { Id = 102, Name = "Ben Carter",      Email = "ben@example.com" },
         new User { Id = 103, Name = "Carla Diaz",      Email = "carla@example.com" },
         new User { Id = 104, Name = "Devon Park",      Email = "devon@example.com" },
-        new User { Id = 105, Name = "Esra Yilmaz",     Email = "esra@example.com" }
+        new User { Id = 105, Name = "Esra Yilmaz",     Email = "esra@example.com" },
+        new User { Id = 982, Name = "Felix Roy (ERP import)", Email = "felix.roy@example.com" }
     ];
 
     private static readonly (string Sku, int PriceCents)[] Catalog =
@@ -41,6 +42,12 @@ public static class DbSeeder
 
         foreach (var user in Users)
         {
+            if (user.Id == 982)
+            {
+                SeedBulkImportUser(user, orders, items, rng, ref nextOrderId, ref nextItemId);
+                continue;
+            }
+
             var orderCount = 30 + rng.Next(31);
 
             for (var k = 0; k < orderCount; k++)
@@ -84,6 +91,55 @@ public static class DbSeeder
         }
 
         return (Users, orders, items);
+    }
+
+    private static void SeedBulkImportUser(
+        User user,
+        List<Order> orders,
+        List<OrderItem> items,
+        Random rng,
+        ref int nextOrderId,
+        ref int nextItemId)
+    {
+        DateTime[] importBatches =
+        [
+            new DateTime(2024, 5, 12, 14, 0, 0, DateTimeKind.Utc),
+            new DateTime(2024, 9, 03, 09, 30, 0, DateTimeKind.Utc),
+            new DateTime(2025, 1, 21, 16, 45, 0, DateTimeKind.Utc),
+            new DateTime(2025, 6, 04, 11, 15, 0, DateTimeKind.Utc)
+        ];
+        const int orderCount = 40;
+
+        for (var k = 0; k < orderCount; k++)
+        {
+            var createdAt = importBatches[k % importBatches.Length];
+            var orderId = nextOrderId++;
+            var lineCount = 1 + rng.Next(3);
+            var lineTotal = 0;
+            for (var li = 0; li < lineCount; li++)
+            {
+                var prod = Catalog[rng.Next(Catalog.Length)];
+                var qty = 1 + rng.Next(3);
+                lineTotal += qty * prod.PriceCents;
+                items.Add(new OrderItem
+                {
+                    Id = nextItemId++,
+                    OrderId = orderId,
+                    Sku = prod.Sku,
+                    Quantity = qty,
+                    UnitPriceCents = prod.PriceCents
+                });
+            }
+            orders.Add(new Order
+            {
+                Id = orderId,
+                UserId = user.Id,
+                Status = OrderStatus.Delivered,
+                CreatedAt = createdAt,
+                TotalCents = lineTotal,
+                DeletedAt = null
+            });
+        }
     }
 
     private static OrderStatus PickStatus(Random rng, DateTime createdAt)

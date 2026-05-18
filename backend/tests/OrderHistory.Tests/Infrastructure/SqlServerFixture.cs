@@ -1,5 +1,6 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using OrderHistory.Api.Data;
 
 namespace OrderHistory.Tests.Infrastructure;
@@ -51,12 +52,15 @@ public class SqlServerFixture : IAsyncLifetime
         await cmd.ExecuteNonQueryAsync();
     }
 
-    public OrderDbContext CreateContext()
+    public OrderDbContext CreateContext(params IInterceptor[] interceptors)
     {
-        var opts = new DbContextOptionsBuilder<OrderDbContext>()
-            .UseSqlServer(ConnectionString)
-            .Options;
-        return new OrderDbContext(opts);
+        var builder = new DbContextOptionsBuilder<OrderDbContext>()
+            .UseSqlServer(ConnectionString);
+        if (interceptors.Length > 0)
+        {
+            builder = builder.AddInterceptors(interceptors);
+        }
+        return new OrderDbContext(builder.Options);
     }
 }
 
