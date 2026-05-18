@@ -7,17 +7,21 @@
 
 ## What's happening
 
-A handful of customers are seeing the same order listed on two consecutive
-pages of their order history. Other orders go missing from the list entirely
-— but those orders still show up correctly when you look them up directly
-by ID. The list endpoint's `total` count is right; it's just the items that
-appear scrambled across pages.
+Customers are seeing the same order appear on two consecutive pages of
+their order history. Other orders go missing from the list entirely — but
+those orders still show up correctly when you look them up directly by ID.
+The list endpoint's `total` count is right; it's just the items that come
+back scrambled across pages.
 
-We can't reproduce it for most users. The report Sasha forwarded is from
-one specific customer — **user 982 ("Felix Roy")**, whose 40 orders were
-all created in one of four bulk-import batches when their ERP integration
-first went live. Every order inside a batch has an **identical**
-`created_at` because the importer wrote them in a tight loop.
+It only shows up when a user has multiple orders sharing the same
+`created_at` timestamp. That's exactly what happens to anyone whose orders
+came in from a bulk import — the importer writes them in a tight loop and
+they all stamp identically.
+
+## Repro
+
+The clearest report is from **user 982 ("Felix Roy")**, whose 40 orders
+were created in four import batches:
 
 | Batch timestamp (UTC) | Orders in batch | Order IDs |
 |-----------------------|----------------:|-----------|
@@ -26,50 +30,40 @@ first went live. Every order inside a batch has an **identical**
 | 2024-09-03 09:30:00   | 10              | 244 – 253 |
 | 2024-05-12 14:00:00   | 10              | 234 – 243 |
 
-You can pull these yourself: `GET /api/orders?userId=982&pageSize=50`,
-or pick "Felix Roy (ERP import)" from the user dropdown in the UI.
+Open the UI, pick "Felix Roy (ERP import)" from the user dropdown, and
+page through with the default page size. You'll likely see something like:
 
-## What the customer sent us
-
-Sasha attached a screen recording. The customer was paging through their
-order history with `pageSize=5`. The first two pages from their session:
-
-| Page | Order IDs returned (customer's session) |
-|------|-----------------------------------------|
-| 1    | #273, #271, **#272**, #269, **#270**    |
-| 2    | **#272** ← repeat, **#270** ← repeat, #268, #267, #266 |
-
-Two orders from page 1 (#272 and #270) appear again on page 2. Meanwhile
-**#265 and #264 never appear at all** — the customer paged through every
-page and they were never shown, even though `GET /api/orders/265` and
-`GET /api/orders/264` return them fine and the `total` field across pages
-sums to 40.
-
-The customer's stated frustration: "I'm trying to reconcile a $424.93
-charge from June. I see it on one page, refresh, and it's on a different
-page or gone." (That's order **#267** — June 4, 2025, $424.93.)
-
-## What you'll see locally
-
-If you page through user 982 against your local database, you'll most
-likely see the canonical order:
-
-| Page | Order IDs returned (your local DB)   |
+| Page | Order IDs on screen                  |
 |------|--------------------------------------|
-| 1    | #273, #272, #271, #270, #269         |
-| 2    | #268, #267, #266, #265, #264         |
-| 3    | #263, #262, #261, #260, #259         |
-| …    | …                                    |
-| 8    | #238, #237, #236, #235, #234         |
+| 1    | #267, #266, #272, #271, #268         |
+| 2    | **#268** (repeat), #265, #264, **#269**, **#271** (repeat) |
+| 3    | #260, #261, #262, #257, #258         |
 
-No dupes, no gaps. That's because SQL Server's query plan on this small
-dataset happens to be stable. **The bug is intermittent in the API/UI** —
-plan choice depends on stats, parallelism, and concurrent load — but the
-query itself is unsafe regardless of whether dupes surface today.
+Now **refresh the page**. You'll see a completely different set of order
+IDs on page 1 — the exact same orders just reshuffled — and a different
+set of dupes between pages. This is the smoking gun: the result for any
+given page is not stable across requests.
 
-## Repro (this is the source of truth)
+You can also hit the API directly to see it:
 
-The on-call rotation handed this over with the following note:
+```
+GET http://localhost:5080/api/orders?userId=982&page=1&pageSize=5
+GET http://localhost:5080/api/orders?userId=982&page=2&pageSize=5
+```
+
+Compare the IDs between the two responses. Hit each one again and watch
+them change.
+
+## What we think is happening
+
+Pagination is fed a sort that doesn't uniquely identify rows, so the
+database is free to return tied rows in any order — and it's exercising
+that freedom on every call. With OFFSET/FETCH on an unstable sort, the
+first N rows of "the second page" can overlap with the first N rows of
+"the first page," and rows that should appear on page 2 are pushed out
+of the window entirely.
+
+The on-call rotation left this note:
 
 > I added a failing test before I went out — `PaginationStableOrderingTests`.
 > It pages through this user's tied-timestamp orders and inspects what the
@@ -85,6 +79,7 @@ dotnet test --filter "FullyQualifiedName~PaginationStableOrderingTests"
 
 - Paging through a user's orders returns each order exactly once, even
   when multiple orders share a `created_at` timestamp.
+- The order of rows on a given page is the same across repeated requests.
 - Regression test coverage so this can't reappear.
 - Existing pagination tests still pass.
 

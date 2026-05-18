@@ -9,6 +9,9 @@ public class OrderDbContext(DbContextOptions<OrderDbContext> options) : DbContex
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
 
+    [DbFunction("NEWID", IsBuiltIn = true)]
+    public static Guid NewId() => throw new NotSupportedException();
+
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<User>(e =>

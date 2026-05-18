@@ -32,6 +32,7 @@ public class OrderService(OrderDbContext db, UserStatsService stats)
 
         var items = await query
             .OrderByDescending(o => o.CreatedAt)
+            .ThenBy(o => OrderDbContext.NewId())
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(o => new OrderSummaryDto(
