@@ -1,0 +1,52 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+.vscode/
+project.lock.json
+*.pidb
+artifacts/
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+
+# EF
+*.mdf
+*.ldf
+
+# Node / frontend
+node_modules/
+dist/
+.vite/
+.eslintcache
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Env
+.env
+.env.local
+.env.development.local
+.env.production.local
+*.local
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Docker volumes (we use named volumes, but just in case)
+.docker-data/
+
+# Tool caches
+.idea/
+
+# Local helper artifacts
+.api.pid
+.fe.pid
+.*.log
