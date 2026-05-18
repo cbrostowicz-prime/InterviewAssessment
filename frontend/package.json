@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "predev": "node -e \"require('fs').rmSync('node_modules/.vite',{recursive:true,force:true})\"",
-    "dev": "vite",
+    "dev": "node ./scripts/dev.mjs",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "test": "vitest run",
