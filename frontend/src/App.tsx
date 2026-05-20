@@ -8,7 +8,7 @@ import { useOrders } from './hooks/useOrders';
 import { useStats } from './hooks/useStats';
 import { useCancelOrder } from './hooks/useCancelOrder';
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 5;
 
 export default function App() {
   const usersQuery = useUsers();
