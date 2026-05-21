@@ -6,7 +6,6 @@ type Props = {
 };
 
 export function Pager({ page, pageSize, total, onChange }: Props) {
-  const lastPage = Math.max(1, Math.ceil(total / pageSize));
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const to = Math.min(page * pageSize, total);
   return (
@@ -24,7 +23,6 @@ export function Pager({ page, pageSize, total, onChange }: Props) {
         </button>
         <button
           className="rounded border border-slate-300 px-3 py-1 disabled:opacity-50"
-          disabled={page >= lastPage}
           onClick={() => onChange(page + 1)}
         >
           Next
