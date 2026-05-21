@@ -37,7 +37,6 @@ public class UserStatsService(OrderDbContext db, IMemoryCache cache)
         var rows = db.Orders
             .AsNoTracking()
             .Where(o => o.UserId == userId
-                        && o.DeletedAt == null
                         && o.Status != OrderStatus.Cancelled
                         && o.Status != OrderStatus.Refunded);
 

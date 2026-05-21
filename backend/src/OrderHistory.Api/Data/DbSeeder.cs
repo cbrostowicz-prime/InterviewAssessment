@@ -71,6 +71,15 @@ public static class DbSeeder
                     });
                 }
 
+                // Deterministic soft-delete window for user 102: mark the
+                // 5th-8th orders in their seed loop as deleted ~30 days ago.
+                // These map to seeded order ids 41-44 (all Placed/Delivered,
+                // none Cancelled/Refunded) so they'd otherwise count toward
+                // both the list and the stats.
+                DateTime? deletedAt = user.Id == 102 && k >= 4 && k <= 7
+                    ? ReferenceNow.AddDays(-30)
+                    : null;
+
                 orders.Add(new Order
                 {
                     Id = orderId,
@@ -78,7 +87,7 @@ public static class DbSeeder
                     Status = status,
                     CreatedAt = createdAt,
                     TotalCents = lineTotal,
-                    DeletedAt = null
+                    DeletedAt = deletedAt
                 });
             }
         }
