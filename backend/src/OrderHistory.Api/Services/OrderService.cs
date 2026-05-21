@@ -133,6 +133,20 @@ public class OrderService(OrderDbContext db, UserStatsService stats)
         await db.SaveChangesAsync(ct);
         return CancelResult.Cancelled;
     }
+
+    // ORD-1701: Finance + Operations need refund/chargeback transitions.
+    // Stubs exist so service-level tests can compile against the new surface.
+    // The transition logic, stats-cache invalidation, controller routes, and
+    // the new OrderStatus.ChargedBack value are still TODO.
+    public Task<RefundResult> RefundAsync(int orderId, CancellationToken ct)
+    {
+        throw new NotImplementedException("ORD-1701: RefundAsync not yet implemented.");
+    }
+
+    public Task<ChargebackResult> ChargebackAsync(int orderId, CancellationToken ct)
+    {
+        throw new NotImplementedException("ORD-1701: ChargebackAsync not yet implemented.");
+    }
 }
 
 public enum CancelResult
@@ -141,4 +155,20 @@ public enum CancelResult
     NotFound,
     AlreadyCancelled,
     NotCancellable
+}
+
+public enum RefundResult
+{
+    Refunded,
+    NotFound,
+    AlreadyRefunded,
+    NotRefundable
+}
+
+public enum ChargebackResult
+{
+    ChargedBack,
+    NotFound,
+    AlreadyChargedBack,
+    NotChargeable
 }
