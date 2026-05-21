@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using OrderHistory.Api.Dtos;
+using OrderHistory.Api.Models;
 using OrderHistory.Api.Services;
 
 namespace OrderHistory.Api.Controllers;
@@ -14,6 +15,9 @@ public class OrdersController(OrderService orders) : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         [FromQuery] bool includeDeleted = false,
+        [FromQuery] OrderStatus[]? status = null,
+        [FromQuery] DateTime? fromDate = null,
+        [FromQuery] DateTime? toDate = null,
         CancellationToken ct = default)
     {
         if (userId <= 0)
@@ -21,6 +25,9 @@ public class OrdersController(OrderService orders) : ControllerBase
             return BadRequest(new { error = "userId is required." });
         }
 
+        // ORD-1612: filter parameters land on the controller surface so clients
+        // and tests can hit the endpoint with them, but they are not yet
+        // threaded into the service call. Wiring them up is the body of work.
         var result = await orders.ListByUserAsync(userId, page, pageSize, includeDeleted, ct);
         return Ok(result);
     }
