@@ -7,7 +7,6 @@ export function useCancelOrder(userId: number | null) {
     mutationFn: (orderId: number) => cancelOrder(orderId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['orders', userId] });
-      qc.invalidateQueries({ queryKey: ['stats', userId] });
     },
   });
 }
