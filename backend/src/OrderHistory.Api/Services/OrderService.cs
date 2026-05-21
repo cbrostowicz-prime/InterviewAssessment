@@ -17,7 +17,7 @@ public class OrderService(OrderDbContext db, UserStatsService stats)
         DateTime? fromDate = null,
         DateTime? toDate = null)
     {
-        // NOTE (ORD-1612): status / fromDate / toDate are accepted here so the
+        // NOTE (ORD-1644): status / fromDate / toDate are accepted here so the
         // controller and tests can supply them, but the body does not yet apply
         // them. Implementing the filter is the body of the work item.
         _ = status;

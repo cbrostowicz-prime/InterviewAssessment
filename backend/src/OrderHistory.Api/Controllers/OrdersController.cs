@@ -25,7 +25,7 @@ public class OrdersController(OrderService orders) : ControllerBase
             return BadRequest(new { error = "userId is required." });
         }
 
-        // ORD-1612: filter parameters land on the controller surface so clients
+        // ORD-1644: filter parameters land on the controller surface so clients
         // and tests can hit the endpoint with them, but they are not yet
         // threaded into the service call. Wiring them up is the body of work.
         var result = await orders.ListByUserAsync(userId, page, pageSize, includeDeleted, ct);
