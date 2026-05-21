@@ -42,7 +42,7 @@ public class UserStatsService(OrderDbContext db, IMemoryCache cache)
                         && o.Status != OrderStatus.Refunded);
 
         var count = await rows.CountAsync(ct);
-        var totalCents = count == 0 ? 0L : await rows.SumAsync(o => (long)o.TotalCents, ct);
-        return new UserStatsDto(userId, count, totalCents / 100m);
+        var totalDollars = count == 0 ? 0L : await rows.SumAsync(o => (long)(o.TotalCents / 100), ct);
+        return new UserStatsDto(userId, count, (decimal)totalDollars);
     }
 }
