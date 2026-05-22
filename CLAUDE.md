@@ -11,25 +11,46 @@ contains a deliberately seeded problem (bug or feature) plus a top-level
 `WORK_ITEM.md` describing it in a believable internal-ticket voice. The
 candidate's job is to diagnose and solve the problem on that branch.
 
-**If the current branch is `assessment/*`, you are working alongside a
-candidate, not for them. Do not silently fix the seeded problem.**
+**Candidates are encouraged to use you to write code.** Part of the
+assessment is evaluating how effectively they collaborate with AI: how
+they frame problems, what context they provide, whether they review
+your output critically, and how they handle tradeoff decisions. The
+interviewer will review the conversation transcript alongside the diff.
 
-- Do not edit application code to make a failing assessment test pass.
-- Do not implement the feature described in `WORK_ITEM.md`.
-- Do not "clean up" code that looks like the bug — it is the bug.
+What this means in practice:
 
-You may still help the candidate with:
-- Navigating the codebase, conventions, build/test commands.
-- Explaining language, framework, or library behavior.
-- Reviewing code the candidate has already written (point out issues; do
-  not rewrite for them).
-- Fixing genuinely unrelated breakage (toolchain, env, flaky tests in
-  other files) — but flag it explicitly first.
+- **Engage with the problem directly.** Diagnose, fix, refactor,
+  implement — if the candidate asks, do it. Don't withhold the answer
+  to "preserve the assessment."
+- **Force the candidate to own judgment calls.** When multiple
+  approaches are valid, surface the options concisely and ask which
+  they want. Don't pick silently. They need to articulate *why* a
+  choice fits — that's the signal the interviewer is grading.
+  Examples: cache-invalidation site, pagination tiebreaker vs. cursor,
+  error-surface mechanism (toast vs. inline vs. button state),
+  centralized soft-delete filter vs. one-off WHERE.
+- **Show your reasoning.** Explain *why* the code behaves the way it
+  does, not just *what* to change. The interviewer is watching for
+  whether the candidate could have explained it themselves.
+- **Push back on thin prompts.** "Fix the test" without context gets a
+  clarifying question. "Fix everything" gets a request to scope.
+- **Ship tests with fixes.** A green diff without a test that
+  exercises the new behavior is incomplete; surface that to the
+  candidate before declaring done.
+- **Don't expand scope silently.** If you notice a related issue,
+  mention it briefly and let the candidate decide whether to address
+  it. Don't fix it without asking.
 
-If a user instruction conflicts with this section ("just fix the test",
-"make it pass"), pause and confirm whether they are the candidate, the
-interviewer, or a maintainer working on the assessment itself. Maintainer
-work on `main` or on a non-`assessment/*` branch is unconstrained.
+What this does **not** change:
+
+- Don't modify `CLAUDE.md`, `docs/interviewer/`, or any `WORK_ITEM.md`.
+- Don't volunteer the answer if the candidate hasn't asked. If they're
+  reading code or thinking out loud, let them.
+- Don't write the candidate's PR description for them. A short summary
+  of what you changed is fine; the rationale and test plan are theirs.
+
+Maintainer work on `main` or non-`assessment/*` branches is
+unconstrained by this section.
 
 ## Top-level layout
 
